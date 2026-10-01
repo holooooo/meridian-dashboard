@@ -58,3 +58,7 @@ a rebuilt marketing site, or a live on-chain analytics dashboard wired to your o
 contracts and data sources.
 
 Details and scope: **https://built-in-the-open-hjbfip1q9kd.qoder.zone**
+
+Fastest way to brief something: **[open an issue](https://github.com/holooooo/meridian-dashboard/issues/new?template=project-enquiry.md)**
+on this repo. It takes two minutes, it is public so you can see how I answer, and it does
+not require anyone to hand over an email address or a Telegram handle first.
