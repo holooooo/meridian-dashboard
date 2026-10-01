@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meridian — Protocol Treasury &amp; TVL Intelligence</title>
+<meta name="description" content="Live treasury, TVL, chain allocation and pool-level yield intelligence for DeFi protocols. Data streamed from DefiLlama public APIs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="./styles.css">
+<link rel="icon" href="data:,">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M2 18 L7 9 L12 14 L17 4 L22 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="miter"/>
+      <path d="M2 21 H22" stroke="currentColor" stroke-width="1" opacity=".4"/>
+    </svg>
+    <div class="brand-txt">
+      <div class="brand-name">MERIDIAN</div>
+      <div class="brand-sub">Protocol Treasury &amp; TVL Intelligence</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="field field-proto">
+      <label class="field-lbl" for="proto-input">Protocol</label>
+      <div class="combo" id="proto-combo">
+        <svg class="combo-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 10.5 L14 14" stroke="currentColor" stroke-width="1.4"/></svg>
+        <input id="proto-input" class="combo-input" type="text" role="combobox" aria-expanded="false" aria-controls="proto-list" aria-autocomplete="list"
+               spellcheck="false" autocomplete="off" placeholder="Search by name or slug…">
+        <ul id="proto-list" class="combo-list" role="listbox" aria-label="Protocol suggestions" hidden></ul>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-lbl" for="compare-select">Compare with</label>
+      <div class="select-wrap">
+        <select id="compare-select" class="select"><option value="">— none —</option></select>
+      </div>
+    </div>
+
+    <button id="refresh" class="btn" type="button" title="Reload live data (r)">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M14 8a6 6 0 1 1-1.8-4.3M14 1.5V4.5H11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <span>Refresh</span>
+    </button>
+  </div>
+
+  <div class="status" id="status">
+    <span class="dot" id="status-dot"></span>
+    <span id="status-txt">connecting…</span>
+  </div>
+</header>
+
+<div class="alertbar" id="alertbar" hidden></div>
+
+<main class="grid">
+
+  <!-- identity -->
+  <section class="panel span-12" id="p-identity" aria-label="Protocol identity">
+    <div class="skeleton sk-identity"></div>
+  </section>
+
+  <!-- headline metrics -->
+  <section class="panel metrics span-12" id="p-metrics" aria-label="Headline metrics">
+    <div class="metric skeleton sk-metric"></div><div class="metric skeleton sk-metric"></div><div class="metric skeleton sk-metric"></div>
+    <div class="metric skeleton sk-metric"></div><div class="metric skeleton sk-metric"></div><div class="metric skeleton sk-metric"></div>
+    <div class="metric skeleton sk-metric"></div>
+  </section>
+
+  <!-- TVL chart -->
+  <section class="panel span-8" id="p-tvl">
+    <div class="p-head">
+      <div>
+        <h2 class="p-title">Total Value Locked</h2>
+        <p class="p-sub" id="tvl-sub">&nbsp;</p>
+      </div>
+      <div class="p-tools">
+        <div class="seg" id="range-seg" role="group" aria-label="Time range">
+          <button type="button" data-range="30d">30D</button>
+          <button type="button" data-range="90d">90D</button>
+          <button type="button" data-range="1y" class="on">1Y</button>
+          <button type="button" data-range="all">ALL</button>
+        </div>
+      </div>
+    </div>
+    <div class="chart-box chart-tvl"><div class="skeleton sk-fill"></div><canvas id="c-tvl"></canvas></div>
+    <div class="p-foot" id="tvl-foot"></div>
+  </section>
+
+  <!-- allocation -->
+  <section class="panel span-4" id="p-alloc">
+    <div class="p-head">
+      <div><h2 class="p-title">Chain Allocation</h2><p class="p-sub" id="alloc-sub">&nbsp;</p></div>
+    </div>
+    <div class="chart-box chart-donut">
+      <div class="skeleton sk-fill"></div>
+      <canvas id="c-alloc"></canvas>
+      <div class="donut-center" id="donut-center"></div>
+    </div>
+    <ul class="legend" id="alloc-legend"></ul>
+  </section>
+
+  <!-- pools -->
+  <section class="panel span-7" id="p-pools">
+    <div class="p-head">
+      <div><h2 class="p-title">Top Pools</h2><p class="p-sub" id="pools-sub">&nbsp;</p></div>
+      <div class="p-tools legend-inline">
+        <span class="key"><i class="sw sw-up"></i>Stable/Up</span>
+        <span class="key"><i class="sw sw-down"></i>Down</span>
+        <span class="key"><i class="sw sw-na"></i>No signal</span>
+      </div>
+    </div>
+    <div id="pools-body"></div>
+  </section>
+
+  <!-- fees / treasury -->
+  <section class="panel span-5" id="p-fees">
+    <div class="p-head">
+      <div><h2 class="p-title">Fee &amp; Yield Generation</h2><p class="p-sub" id="fees-sub">&nbsp;</p></div>
+    </div>
+    <div class="mini-metrics" id="fees-metrics"></div>
+    <div class="chart-box chart-fees"><div class="skeleton sk-fill"></div><canvas id="c-fees"></canvas></div>
+    <p class="method" id="fees-method"></p>
+  </section>
+
+  <!-- composition -->
+  <section class="panel span-4" id="p-comp">
+    <div class="p-head">
+      <div><h2 class="p-title">Asset Composition</h2><p class="p-sub" id="comp-sub">&nbsp;</p></div>
+    </div>
+    <div id="comp-body"></div>
+  </section>
+
+  <!-- footprint -->
+  <section class="panel span-4" id="p-foot">
+    <div class="p-head">
+      <div><h2 class="p-title">Deployment Footprint</h2><p class="p-sub">First observed TVL per chain</p></div>
+    </div>
+    <div id="foot-body"></div>
+  </section>
+
+  <!-- risk / provenance -->
+  <section class="panel span-4" id="p-risk">
+    <div class="p-head">
+      <div><h2 class="p-title">Protocol Record</h2><p class="p-sub">DefiLlama directory attributes</p></div>
+    </div>
+    <div id="risk-body"></div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="foot-l">
+    <strong>Data is live.</strong> Every figure on this page is fetched at view time from the public, unauthenticated
+    <a href="https://www.defillama.com" target="_blank" rel="noopener">DefiLlama</a> APIs
+    (<code>api.llama.fi</code>, <code>yields.llama.fi</code>). Nothing is estimated, smoothed or seeded. Panels show an explicit state when a source is unavailable.
+  </div>
+  <div class="foot-r">
+    <span><kbd>/</kbd> search protocol · <kbd>r</kbd> refresh</span>
+    <span id="build-stamp">Meridian demo build</span>
+  </div>
+</footer>
+
+<div class="panel-overlay" id="boot-veil"><div class="veil-inner">loading live data…</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
